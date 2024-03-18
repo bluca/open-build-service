@@ -12,7 +12,7 @@ use BSSolv;
 
 my $reporoot = "$BSConfig::bsdir/build";
 
-my @binsufs = qw{rpm deb pkg.tar.gz pkg.tar.xz pkg.tar.zst};
+my @binsufs = qw{rpm deb pkg.tar.gz pkg.tar.xz pkg.tar.zst raw raw.xz raw.zstd cpio cpio.xz cpio.zstd tar tar.xz tar.zstd};
 my $binsufsre = join('|', map {"\Q$_\E"} @binsufs);
 
 sub getconfig {

@@ -24,7 +24,7 @@ use BSBuild;		# for add_meta
 use BSSolv;		# for add_meta/gen_meta
 use BSSched::BuildJob;
 
-my @binsufs = qw{rpm deb pkg.tar.gz pkg.tar.xz pkg.tar.zst};
+my @binsufs = qw{rpm deb pkg.tar.gz pkg.tar.xz pkg.tar.zst raw raw.xz raw.zstd cpio cpio.xz cpio.zstd tar tar.xz tar.zstd};
 my $binsufsre = join('|', map {"\Q$_\E"} @binsufs);
 
 =head1 NAME

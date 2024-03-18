@@ -113,7 +113,7 @@ my $extrepodb = "$BSConfig::bsdir/db/published";
 
 my $ajaxsocket = "$rundir/bs_repserver.ajax";
 
-my @binsufs = qw{rpm deb pkg.tar.gz pkg.tar.xz pkg.tar.zst};
+my @binsufs = qw{rpm deb pkg.tar.gz pkg.tar.xz pkg.tar.zst raw raw.xz raw.zstd cpio cpio.xz cpio.zstd tar tar.xz tar.zstd};
 my $binsufsre = join('|', map {"\Q$_\E"} @binsufs);
 
 # XXX read jobs instead?
@@ -2376,6 +2376,22 @@ sub putjob {
       my $prefix = $file->{'name'};
       next unless $prefix =~ s/\.containerinfo$//;
       my $obsbinlink = BSRepServer::Containerinfo::containerinfo2obsbinlnk($dir, "$prefix.containerinfo", $info->{'package'});
+      next unless $obsbinlink;
+      BSUtil::store("$dir/$prefix.obsbinlnk", undef, $obsbinlink);
+      my @s = stat("$dir/$prefix.obsbinlnk");
+      next unless @s;
+      my $data = { %$obsbinlink, 'filename' => "$prefix.obsbinlnk", 'id' => "$s[9]/$s[7]/$s[1]" };
+      delete $data->{'path'};
+      $bininfo->{$data->{'filename'}} = $data;
+    }
+  }
+
+  # create obsbinlnk file for mkosi results
+  if (grep {$_->{'name'} =~ /\.manifest(?:\.(?:gz|bz2|xz|zst|zstd))?$/} @$uploaded) {
+    for my $file (@$uploaded) {
+      my $prefix = $file->{'name'};
+      next unless $prefix =~ s/\.manifest$//;
+      my $obsbinlink = BSRepServer::Containerinfo::manifest2obsbinlnk($dir, $file, $prefix, $info->{'package'});
       next unless $obsbinlink;
       BSUtil::store("$dir/$prefix.obsbinlnk", undef, $obsbinlink);
       my @s = stat("$dir/$prefix.obsbinlnk");

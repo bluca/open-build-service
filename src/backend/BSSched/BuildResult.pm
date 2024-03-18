@@ -63,7 +63,7 @@ use BSSched::BuildJob::PreInstallImage;	# for update_preinstallimage
 use BSSched::Access;			# for checkaccess
 use BSSched::ProjPacks;			# for getconfig
 
-my @binsufs = qw{rpm deb pkg.tar.gz pkg.tar.xz pkg.tar.zst};
+my @binsufs = qw{rpm deb pkg.tar.gz pkg.tar.xz pkg.tar.zst raw raw.xz raw.zstd cpio cpio.xz cpio.zstd tar tar.xz tar.zstd};
 my $binsufsre = join('|', map {"\Q$_\E"} @binsufs);
 my $binsufsre_binlnk = join('|', map {"\Q$_\E"} (@binsufs, 'obsbinlnk'));
 

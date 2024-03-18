@@ -23,6 +23,9 @@ use BSUtil;
 use Digest::MD5 ();
 use BSXML;
 
+eval { require IO::Uncompress::Gunzip; };
+*IO::Uncompress::Gunzip::new = sub {die("IO::Uncompress::Gunzip is not available\n")} unless defined &IO::Uncompress::Gunzip::new;
+
 use strict;
 
 =head1 NAME
@@ -156,6 +159,75 @@ sub writecontainerinfo {
   my ($fn, $fnf, $containerinfo) = @_;
   my $containerinfo_json = JSON::XS->new->utf8->canonical->pretty->encode($containerinfo);
   writestr($fn, $fnf, $containerinfo_json);
+}
+
+=head2  manifest2obsbinlnk - convert a mkosi manifest file to an obsbinlnk
+
+ input: $dir - directory of the built container
+        $containerinfo - manifest filename in $dir
+        $packid - package name of the built container
+
+ output: obsbinlnk hash or undef
+
+=cut
+
+sub manifest2obsbinlnk {
+  my ($dir, $file, $prefix, $packid) = @_;
+  my $json_fh;
+  my $md5 = Digest::MD5->new;
+  my $image;
+  my $json_text = do {
+      unless (open($json_fh, "<", "$dir/$file")) {
+          warn("Error opening $dir/$file: $!\n");
+          return {};
+      }
+      if ($file =~ /\.gz$/) {
+        $json_fh = IO::Uncompress::Gunzip->new($json_fh) or die("Error opening $dir/$file: $IO::Uncompress::Gunzip::GunzipError\n");
+      }
+      local $/;
+      <$json_fh>
+  };
+
+  my $metadata = JSON::XS::decode_json($json_text);
+  if (!$metadata || !$metadata->{'config'}) {
+    return {};
+  }
+
+  for my $ext ("", ".raw", ".gz", ".xz", ".zst", ".zstd") {
+    my $fn = "$dir/$prefix$ext";
+    if (-e $fn) {
+      if (-l $fn) {
+        $prefix = readlink($fn);
+      }
+      open(my $fh, '<', "$dir/$prefix$ext") or die("Error opening $dir/$prefix$ext: $!\n");
+      $md5->addfile($fh);
+      close($fh);
+      $image = $prefix . $ext;
+      last;
+    }
+  }
+  if (!$image) {
+    return {};
+  }
+
+  my $distribution = $metadata->{'config'}->{'distribution'};
+  my $release = $metadata->{'config'}->{'release'};
+  my $architecture = $metadata->{'config'}->{'architecture'};
+  my $name = $metadata->{'config'}->{'name'};
+  my $version = $metadata->{'config'}->{'version'} || '0';
+  # Note: release here is not the RPM release, but the distribution release (eg: Debian 10)
+  my @provides = ("$distribution:$release", "container:$name = $version", "container:$packid = $version");
+
+  return {
+      'provides' => \@provides,
+      'source' => $packid,
+      'name' => "container:$name",
+      'version' => $version,
+      'release' => '0',
+      'arch' => $architecture,
+      'hdrmd5' => $md5->hexdigest(),
+      'lnk' => $image,
+  };
 }
 
 1;

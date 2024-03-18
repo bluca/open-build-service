@@ -1019,7 +1019,7 @@ sub create {
   }
 
   my $kiwimode;
-  $kiwimode = $buildtype if $buildtype eq 'kiwi-image' || $buildtype eq 'kiwi-product' || $buildtype eq 'docker' || $buildtype eq 'fissile' || $buildtype eq 'productcompose';
+  $kiwimode = $buildtype if $buildtype eq 'kiwi-image' || $buildtype eq 'kiwi-product' || $buildtype eq 'docker' || $buildtype eq 'fissile' || $buildtype eq 'productcompose' || $buildtype eq 'mkosi';
   my $ccache;
 
   my $syspath;
